@@ -7,8 +7,6 @@ include /usr/share/cdbs/1/class/qmake.mk
 
 QMAKE = qmake-qt4
 
-
-
 TARGET = quimup
 target.path = /usr/bin
 INSTALLS += target
