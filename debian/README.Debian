@@ -6,6 +6,10 @@ Quimup for Debian
 Created basic package skeleton using `dh_make --single --copyright gpl
 --createorig` in `v0.3.3` source. Manually updated for the 1.3.1 release.
 
+Tracking upstream with the workflow described in 
+https://wiki.debian.org/PackagingWithGit
+
+
 Changes in `./debian`:
 
 `rules'
@@ -13,7 +17,7 @@ Changes in `./debian`:
 * manually created using cdbs template for qmake
 * specified `qmake-qt4' (doesn't build with QT5 without further
   modification of the `pro' file)
-* created custom rule for tje main binary
+* created custom rule for the main binary
 
 `source/include-binaries`
 -------------------------
@@ -40,23 +44,28 @@ Changes in `./debian`:
 -----------
 * points to author, maintainer and GPL
 
+
 `menu`
 ------
 * provide a classic menu entry
 * taken from sourceforge deb 
 
+
 `docs`
 ------
 * include `README` and `ChangeLog` from source root
+
 
 `quimup.1`
 ----------
 * manual page
 * taken from sourceforge deb 
 
+
 `quimup.manpages`
 -----------------
 * include manual page
+
 
 `usr/share/pixmaps`
 -------------------
@@ -64,5 +73,5 @@ Changes in `./debian`:
   manually, 16x16pixels icons created from 64x64
 
 
- -- Ronald van Engelen <ronalde+launchpad@lacocina.nl> Tue, 10 Dec,
-    2013 13:18:21 +0100
+ -- Ronald van Engelen <ronalde+launchpad@lacocina.nl> Fri, 23 May,
+    2014 10:07:21 +0100
