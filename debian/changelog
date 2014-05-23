@@ -1,3 +1,9 @@
+quimup (1.3.1ppa-1) trusty saucy precise quantal oneiric; urgency=low
+
+  * Build options for trusty and older Ubuntu releases
+
+ -- Ronald van Engelen <ronalde+launchpad@lacocina.nl>  Fri, 23 May 2014 10:26:00 +0100
+
 quimup (1.3.1-1) saucy; urgency=low
 
   * Tracking the upstream 1.3.1 release
