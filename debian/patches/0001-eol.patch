@@ -1,0 +1,19 @@
+From: Ronald van Engelen <ronalde+launchpad@lacocina.nl>
+Date: Sun, 25 May 2014 13:20:54 +0200
+Subject: eol
+
+---
+ quimup.pro | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/quimup.pro b/quimup.pro
+index 4856180..a5eb2b4 100644
+--- a/quimup.pro
++++ b/quimup.pro
+@@ -107,4 +107,4 @@ TRANSLATIONS += quimup_nl.ts \
+ QT = core gui network
+ 
+ XUP.SHOW_QT_VERSION_WARNING = 0
+-XUP.OTHERS_PLATFORM_TARGET_DEFAULT = quimup
+\ No newline at end of file
++XUP.OTHERS_PLATFORM_TARGET_DEFAULT = quimup
