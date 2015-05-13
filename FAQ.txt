@@ -33,10 +33,10 @@ ______________________________________________________________________________
 
 q. Where does the album art come from?
 
-a. From the directory where the audio file is located. It is recommended to
-   put a 200x200 pixel bitmap named albumart.jpg in the album directory. 
-   The program looks for a filename that matches *albumart* *folder* *front*
-   *cover* or * (in that order), plus extension 'jpg' 'png' 'gif' or 'bmp'.
+a. Quimup first checks the audio-file for embedded album-art (mp3, ogg, mpc,
+   mp4, flac, wv and ape only). If that fails it checks the directory where
+   the audio file is located for a jpg, png, gif, or bmp file that matches
+   *albumart*, *folder*, *front*, *cover* or * (in that order).
 ______________________________________________________________________________
 
 q. Quimup can't find album art.
@@ -88,11 +88,17 @@ a. Quimup will accept external files only if it is connected to MPD through a
    your file manager (%U and %F are both accepted).
 ______________________________________________________________________________
 
+q. Wen I use 'open with quimup' the items are added in the wrong order. Why?
+
+a. Your file manager uses 'quimup' when it should use 'quimup %U'. You can
+   change the command in the quimup.desktop file.
+______________________________________________________________________________
+
 q. Can I make a feauture request?
 
 a. Of course you can. You can contact me at quimup@coonsden.com. But do keep
    in mind that Quimup is a no-bells-or-whistles music player: not a tag 
-   editor, ipod manager or sound converter.
+   editor, iPod manager or sound converter.
 ______________________________________________________________________________
 
 

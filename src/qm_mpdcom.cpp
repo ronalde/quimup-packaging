@@ -1,7 +1,7 @@
 /*
  *  qm_mpdCom.cpp
  *  QUIMUP MPD communicator class
- *  © 2008-2013 Johan Spee
+ *  © 2008-2014 Johan Spee
  *
  *  This file is part of Quimup
  *
@@ -567,8 +567,8 @@ bool qm_mpdCom::mpd_connect()
 
     if (!server_password.isEmpty())
     {
-        if (!b_status_allowed) // password may be required
-        {
+        //if (!b_status_allowed) // password may be required
+        //{
             mpd_send_password(conn, server_password.toUtf8());
             mpd_response_finish(conn);
             if ( mpd_connection_get_error(conn) != MPD_ERROR_SUCCESS )
@@ -579,9 +579,13 @@ bool qm_mpdCom::mpd_connect()
             }
             else
                 printf("Password accepted\n");
-        }
+    }
+    else
+    {
+        if (!b_status_allowed)
+            printf("Password probably required but not provided\n");
         else
-            printf("Password provided but not used\n");
+            printf("No password provided (probably not required)\n");
     }
 
     config->reset_temps();
@@ -999,27 +1003,30 @@ bool qm_mpdCom::error_check(QString action)
                 default:
                 printf ("MPD: Returned an error code\n");
         }
+
         // If it is a non-fatal error (no permission etc.).
         if (mpd_connection_get_error(conn) != MPD_ERROR_CLOSED)
         {
             // A "broken pipe" error means the connection is lost (which really is quite fatal)
             // "reset by peer" error means the user killed mpd (which is also quite fatal)
             QString errormsg = mpd_connection_get_error_message(conn);
-            printf ("Non fatal error : on \"" + action.toUtf8() + "\": %s\n", mpd_connection_get_error_message(conn));
+
             if ( !errormsg.contains("Broken pipe", Qt::CaseInsensitive) && !errormsg.contains("reset by peer", Qt::CaseInsensitive) )
             {
-
+                printf ("Non fatal error : on \"" + action.toUtf8() + "\": %s\n", mpd_connection_get_error_message(conn));
                 mpd_connection_clear_error(conn);
                 mpd_response_finish(conn);
                 return true;
             }
-            // else
+            else
+                printf ("Connection error : on \"" + action.toUtf8() + "\": %s\n", mpd_connection_get_error_message(conn));
             // no return. proceed as 'fatal'
         }
         else
             // A fatal error occurred: disconnnect & reconnect
             printf ("Fatal error : on \"" + action.toUtf8() + "\": %s\n", mpd_connection_get_error_message(conn));
 
+        mpd_connection_clear_error(conn);
         printf ("Reconnecting...\n");
         mpd_disconnect(false);
         emit sgnl_connected(false);
@@ -1056,22 +1063,31 @@ bool qm_mpdCom::status_check()
 
     b_statcheck_busy = true;
 
+    mpd_status * servStatus = NULL;
+
     // Get the current server status
-    mpd_send_status(conn);
+    if (conn && mpd_send_status(conn)) // FIXME : program crashes here when mpd was killed
+    {
+        servStatus = mpd_recv_status(conn);
 
-    mpd_status * servStatus = mpd_recv_status(conn);
+        mpd_response_finish(conn);
 
-    mpd_response_finish(conn);
-
-    if (!error_check("mpd_recv_status") || servStatus == NULL)
+        if (!error_check("mpd_recv_status") || servStatus == NULL)
+        {
+            b_statcheck_busy = false;
+            if (servStatus != NULL)
+                mpd_status_free(servStatus);
+            return false;
+        }
+    }
+    else
     {
         b_statcheck_busy = false;
-        if (servStatus != NULL && conn != NULL)
-        {
+        if (servStatus != NULL)
             mpd_status_free(servStatus);
-            mpd_response_finish(conn);
-        }
-        return true;
+        mpd_response_finish(conn);
+        error_check("mpd_send_status");
+        return false;
     }
 
     // server has not found a supported mixer
@@ -1085,6 +1101,7 @@ bool qm_mpdCom::status_check()
     }
     else
         b_no_volume = false;
+
 
     // database update was requested && has finished
     if (b_dbase_updating && mpd_status_get_update_id(servStatus) == 0)
@@ -1214,6 +1231,12 @@ QString qm_mpdCom::get_version()
         show_messagebox( tr("Connected to MPD") + " " + version, "\n" + tr("MPD 0.16 or above is required.") + "\n" + tr("Some functions will not work!") );
 
     return version;
+}
+
+
+void qm_mpdCom::reset_playlist()
+{
+    current_playlist--;
 }
 
 
@@ -2034,26 +2057,37 @@ qm_itemList qm_mpdCom::get_directorylist(QString filePath)
             itemlist.push_back(newItem);
         }
         else
-            if(mpd_entity_get_type(entity) == MPD_ENTITY_TYPE_SONG)
-            {
-                qm_listitemInfo newItem;
-                const struct mpd_song * song = mpd_entity_get_song (entity);
-                newItem.file = QString::fromUtf8(mpd_song_get_uri(song));
-                newItem.type = TP_SONG; // never a stream here
-                newItem.time = mpd_song_get_duration(song);
-                newItem.name = (newItem.file).section("/",-1);
-                newItem.sorter = "1" + newItem.name; // "1" so files come next
-                newItem.artist = QString::fromUtf8(mpd_song_get_tag(song, MPD_TAG_ARTIST, 0));
-                newItem.album = QString::fromUtf8(mpd_song_get_tag(song, MPD_TAG_ALBUM, 0));
-                newItem.title = QString::fromUtf8(mpd_song_get_tag(song, MPD_TAG_TITLE, 0));
-                newItem.track = fix_trackformat(QString::fromUtf8(mpd_song_get_tag(song, MPD_TAG_TRACK, 0)) );
-                newItem.genre = QString::fromUtf8(mpd_song_get_tag(song, MPD_TAG_GENRE, 0));
+        if(mpd_entity_get_type(entity) == MPD_ENTITY_TYPE_SONG)
+        {
+            qm_listitemInfo newItem;
+            const struct mpd_song * song = mpd_entity_get_song (entity);
+            newItem.file = QString::fromUtf8(mpd_song_get_uri(song));
+            newItem.type = TP_SONG; // never a stream here
+            newItem.time = mpd_song_get_duration(song);
+            newItem.name = (newItem.file).section("/",-1);
+            newItem.sorter = "1" + newItem.name; // "1" so files come next
+            newItem.artist = QString::fromUtf8(mpd_song_get_tag(song, MPD_TAG_ARTIST, 0));
+            newItem.album = QString::fromUtf8(mpd_song_get_tag(song, MPD_TAG_ALBUM, 0));
+            newItem.title = QString::fromUtf8(mpd_song_get_tag(song, MPD_TAG_TITLE, 0));
+            newItem.track = fix_trackformat(QString::fromUtf8(mpd_song_get_tag(song, MPD_TAG_TRACK, 0)) );
+            newItem.genre = QString::fromUtf8(mpd_song_get_tag(song, MPD_TAG_GENRE, 0));
+            itemlist.push_back(newItem);
+        }
+        else // .cue playlists only
+        if(mpd_entity_get_type(entity) == MPD_ENTITY_TYPE_PLAYLIST)
+        {
+            qm_listitemInfo newItem;
+            newItem.type = TP_PLAYLIST;
+            const struct mpd_playlist *playlist = mpd_entity_get_playlist(entity);
+            QString path = QString::fromUtf8(mpd_playlist_get_path (playlist));
+            newItem.file = path;
+            // put only the list name in 'name'
+            newItem.name = path.section("/",-1);
+            newItem.sorter =  "2" + newItem.name; // "2" so playlists come last
+            // filter out m3u files
+            if (newItem.file.endsWith(".cue") )
                 itemlist.push_back(newItem);
-            }
-        //else // FIXME: allow *cue and other playlists
-        //    if(mpd_entity_get_type(entity) == MPD_ENTITY_TYPE_PLAYLIST)
-        //    {
-        //    }
+        }
 
         mpd_entity_free(entity);
     } // end while

@@ -1,7 +1,7 @@
 /*
 *  qm_playlistview.cpp
 *  QUIMUP playlist listview
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -86,12 +86,20 @@ qm_plistview::qm_plistview(QWidget *parent)
     purge->setIcon(QIcon(":/tr_purge.png"));
     QObject::connect( purge, SIGNAL( triggered() ), this, SLOT( purge_it() ) );
     context_menu->addAction(purge);
+    context_menu->addSeparator();
+
+    a_playreset = new QAction(context_menu);
+    a_playreset->setText(tr("Reset status"));
+    a_playreset->setIcon(QIcon(":/tr_played_reset"));
+    QObject::connect( a_playreset, SIGNAL( triggered() ), this, SLOT( reset_played() ) );
+    context_menu->addAction(a_playreset);
 
     a_shuffle = new QAction(context_menu);
     a_shuffle->setText(tr("Shuffle list"));
     a_shuffle->setIcon(QIcon(":/tr_shuffle.png"));
     QObject::connect( a_shuffle, SIGNAL( triggered() ), this, SLOT( shuffle_it() ) );
     context_menu->addAction(a_shuffle);
+    context_menu->addSeparator();
 
     a_savelist = new QAction(context_menu);
     a_savelist->setText(tr("Save list"));
@@ -104,7 +112,13 @@ qm_plistview::qm_plistview(QWidget *parent)
     a_savesel->setIcon(QIcon(":/tr_saveselect.png"));
     QObject::connect( a_savesel, SIGNAL( triggered() ), this, SLOT( save_selected() ) );
     context_menu->addAction(a_savesel);
-    context_menu->addSeparator();
+/*    context_menu->addSeparator();
+
+    a_loadlist = new QAction(context_menu);
+    a_loadlist->setText(tr("Reload list"));
+    a_loadlist->setIcon(QIcon(":/menu_load.png"));
+    QObject::connect( a_loadlist, SIGNAL( triggered() ), this, SLOT( reload_playlist() ) );
+    context_menu->addAction(a_loadlist); */
 }
 
 // http://qt-project.org/faq/answer/is_it_possible_to_reimplement_non-virtual_slots
@@ -112,7 +126,7 @@ void qm_plistview::fix_header()
  {
     plisthview = new QHeaderView(Qt::Horizontal, this);
     plisthview->setHighlightSections(false);
-    plisthview->setClickable(false);
+    plisthview->setSectionsClickable(false);
     plisthview->setDefaultAlignment(Qt::AlignLeft);
     plisthview->setStretchLastSection(true);
     plisthview->setMinimumSectionSize(80);
@@ -121,55 +135,90 @@ void qm_plistview::fix_header()
  }
 
 
+void qm_plistview::reset_played()
+{
+    QTreeWidgetItemIterator itr(this);
+    while (*itr)
+    {
+        if ( (*itr)->get_state == STATE_PLAYED && (*itr)->get_id != current_songID)
+        {
+            // reset icon
+            if ((*itr)->get_type == TP_SONG)
+                (*itr)->setIcon(1, QIcon(":/tr_track.png"));
+            else
+            {
+                if ((*itr)->get_type == TP_SONGX)
+                    (*itr)->setIcon(1, QIcon(":/tr_trackx.png"));
+                else
+                    (*itr)->setIcon(1, QIcon(":/tr_stream.png"));
+            }
+
+            // reset colors
+            for (int i = 0; i < 6; i++)
+                (*itr)->setForeground( i, QBrush(col_default_fg));
+
+            // reset state
+            (*itr)->set_state(STATE_NEW);
+        }
+        ++itr;
+    }
+}
+
+
 void qm_plistview::keyPressEvent(QKeyEvent *event)
 {
-    if (event->key() == Qt::Key_Return)
+    switch (event->key())
     {
-        on_item_dclicked(currentItem());
-        return;
-    }
+        case Qt::Key_Return:
+        {
+            on_item_dclicked(currentItem());
+            break;
+        }
 
-    if (event->key() == Qt::Key_Delete)
-    {
-        delete_it();
-        return;
-    }
+        case Qt::Key_Delete:
+        {
+            delete_it();
+            break;
+        }
 
-    if (event->key() == Qt::Key_Space)
-    {
-        if (current_songPos != -1 && current_songPos < topLevelItemCount() )
-            scrollToItem(topLevelItem(current_songPos));
-        return;
-    }
+        case Qt::Key_Space:
+        {
+            if (current_songPos != -1 && current_songPos < topLevelItemCount() )
+                scrollToItem(topLevelItem(current_songPos));
+            break;
+        }
 
-    if (event->key() == Qt::Key_Home)
-    {
-        if (topLevelItemCount() > 0)
-            scrollToItem(topLevelItem(0));
-        return;
-    }
+        case Qt::Key_Home:
+        {
+            if (topLevelItemCount() > 0)
+                scrollToItem(topLevelItem(0));
+            break;
+        }
 
-    if (event->key() == Qt::Key_End)
-    {
-        if (topLevelItemCount() > 0)
-            scrollToItem(topLevelItem(topLevelItemCount() - 1));
-        return;
-    }
+        case Qt::Key_End:
+        {
+            if (topLevelItemCount() > 0)
+                scrollToItem(topLevelItem(topLevelItemCount() - 1));
+            break;
+        }
 
-    if (event->key() == Qt::Key_Down)
-    {
-        if (currentItem()->get_pos < topLevelItemCount())
-            setCurrentItem(itemBelow ( currentItem() ));
-        return;
-    }
+        case Qt::Key_Down:
+        {
+            if (currentItem()->get_pos < topLevelItemCount())
+                setCurrentItem(itemBelow ( currentItem() ));
+            break;
+        }
 
-    if (event->key() == Qt::Key_Up)
-    {
-        if (currentItem()->get_pos > 1)
-            setCurrentItem(itemAbove ( currentItem() ));
-        return;
-    }
+        case Qt::Key_Up:
+        {
+            if (currentItem()->get_pos > 1)
+                setCurrentItem(itemAbove ( currentItem() ));
+            break;
+        }
 
+        default:
+            QTreeWidget::keyPressEvent(event);
+    }
 }
 
 
@@ -769,6 +818,14 @@ void qm_plistview::save_it()
 }
 
 
+void qm_plistview::reload_playlist()
+{
+    if (!b_mpd_connected )
+        return;
+    mpdCom->reset_playlist();
+}
+
+
 void qm_plistview::save_selected()
 {
     if (topLevelItemCount() == 0 )
@@ -974,15 +1031,24 @@ void qm_plistview::on_open_with_droprequest(QDropEvent *e)
     {
         int plistsize = topLevelItemCount();
         QList<QUrl> urlList = e->mimeData()->urls();
+        QList<QUrl> checkedlist;
         int count = 0;
-        int last = urlList.size();
-        if (last > 0)
+
+        if (urlList.size() > 0)
         {
             for (int i = 0; i < urlList.size(); ++i)
             {
                 QString url = urlList.at(i).path();
                 if ( file_check(url) )
+                    checkedlist.push_back(urlList.at(i));
+            }
+
+            int last = checkedlist.size();
+            if (last > 0)
+            {
+                for (int i = 0; i < checkedlist.size(); ++i)
                 {
+                    QString url = checkedlist.at(i).path();
                     if ( !url.startsWith("file://", Qt::CaseInsensitive) )
                     {
                         url = "file://" + url;
@@ -990,14 +1056,16 @@ void qm_plistview::on_open_with_droprequest(QDropEvent *e)
                     qm_mpd_command newCommand;
                     newCommand.cmd = CMD_ADD;
                     newCommand.file = url;
+
                     count++;
                     if (count == last) // last one triggers a playlist update
                         mpdCom->execute_single_command(newCommand, true);
                     else
                         mpdCom->execute_single_command(newCommand, false);
                 }
-            }
+
             scrollToItem(topLevelItem(plistsize));
+            }
         }
     }
 
@@ -1007,6 +1075,7 @@ void qm_plistview::on_open_with_droprequest(QDropEvent *e)
     e->ignore();
 }
 
+
  // called by the core
 void qm_plistview::on_open_with_request(const QString& inlist)
 {
@@ -1014,6 +1083,7 @@ void qm_plistview::on_open_with_request(const QString& inlist)
         return;
 
     QString uri = inlist;
+    // printf("ADDING: %s \n", (const char*)inlist.toUtf8());// DEBUG
 
     bool b_newlist = false;
     if  (uri.startsWith("-play:"))
@@ -1030,34 +1100,45 @@ void qm_plistview::on_open_with_request(const QString& inlist)
     if (last == 0)
         return;
 
-    if (b_newlist)
-        mpdCom->clear_list();
+    QStringList checked_uri;
 
     QStringList::iterator iter;
     for (iter = split_uri.begin(); iter != split_uri.end(); ++iter)
     {
-        QString url = *iter;
+       QString url = *iter;
+       if ( file_check(url) )
+          checked_uri.push_back(url);
+    }
 
-        if ( file_check(url) )
-        {
-            if ( !url.startsWith("file://", Qt::CaseInsensitive) )
-                url = "file://" + url;
-            qm_mpd_command newCommand;
-            newCommand.cmd = CMD_ADD;
-            newCommand.file = url;
-            count ++;
-            if (count == last)
-                mpdCom->execute_single_command(newCommand, true); // last one triggers a playlist update
-            else
-                mpdCom->execute_single_command(newCommand, false);
-        }
+    last = checked_uri.size();
+
+    if (last == 0)
+        return;
+
+    if (b_newlist)
+        mpdCom->clear_list();
+
+    for (iter = checked_uri.begin(); iter != checked_uri.end(); ++iter)
+    {
+       QString url = *iter;
+       if ( !url.startsWith("file://", Qt::CaseInsensitive) ) // fixme : should never occur. See split, above.
+           url = "file://" + url;
+       qm_mpd_command newCommand;
+       newCommand.cmd = CMD_ADD;
+       newCommand.file = url;
+       count ++;
+       if (count == last)
+           mpdCom->execute_single_command(newCommand, true); // last one triggers a playlist update
+       else
+           mpdCom->execute_single_command(newCommand, false);
     }
 
     this->setFocus();
 
     if (b_newlist)
-        mpdCom->play(true);
+       mpdCom->play(true);
 }
+
 
 
 void qm_plistview::dropEvent(QDropEvent *e)
@@ -1142,33 +1223,41 @@ void qm_plistview::dropEvent(QDropEvent *e)
         if (b_mpd_connected && e->mimeData()->hasUrls() && config->mpd_socket_conn)
         {
             QList<QUrl> urlList = e->mimeData()->urls();
+            QList<QUrl> checkedlist;
             int count = 0;
-            int last = urlList.size();
 
-            if (last > 0)
+            if (urlList.size() > 0)
             {
                 for (int i = 0; i < urlList.size(); ++i)
                 {
                     QString url = urlList.at(i).path();
                     if ( file_check(url) )
+                        checkedlist.push_back(urlList.at(i));
+                }
+
+                int last = checkedlist.size();
+                if (last > 0)
+                {
+                    for (int i = 0; i < checkedlist.size(); ++i)
                     {
+                        QString url = checkedlist.at(i).path();
                         if ( !url.startsWith("file://", Qt::CaseInsensitive) )
                         {
                             url = "file://" + url;
                         }
                         qm_mpd_command newCommand;
-                        newCommand.cmd = CMD_INS;
-                         // + count or order is reversed:
-                        newCommand.moveTo = dropBeforeIndex + count;
+                        newCommand.cmd = CMD_ADD;
                         newCommand.file = url;
+
                         count++;
                         if (count == last) // last one triggers a playlist update
                             mpdCom->execute_single_command(newCommand, true);
                         else
                             mpdCom->execute_single_command(newCommand, false);
                     }
+
+                    scrollToItem(topLevelItem(dropBeforeIndex));
                 }
-                scrollToItem(topLevelItem(dropBeforeIndex));
             }
         }
     }
@@ -1188,10 +1277,10 @@ bool qm_plistview::file_check(const QString &url)
     if  (   url.endsWith(".mp3",  Qt::CaseInsensitive) ||
             url.endsWith(".ogg",  Qt::CaseInsensitive) ||
             url.endsWith(".mpc",  Qt::CaseInsensitive) ||
-            //url.endsWith(".cue",  Qt::CaseInsensitive) || // playlist: PATH? FIXME
-            //url.endsWith(".m3u",  Qt::CaseInsensitive) || // playlist: PATH? FIXME
             url.endsWith(".flac", Qt::CaseInsensitive) ||
             url.endsWith(".ape",  Qt::CaseInsensitive) ||
+            url.endsWith(".mp4",  Qt::CaseInsensitive) ||
+            url.endsWith(".m4a",  Qt::CaseInsensitive) ||
             url.endsWith(".oga",  Qt::CaseInsensitive) ||
             url.endsWith(".mp2",  Qt::CaseInsensitive) ||
             url.endsWith(".aif",  Qt::CaseInsensitive) ||
@@ -1199,13 +1288,14 @@ bool qm_plistview::file_check(const QString &url)
             url.endsWith(".au",   Qt::CaseInsensitive) ||
             url.endsWith(".wav",  Qt::CaseInsensitive) ||
             url.endsWith(".wv",   Qt::CaseInsensitive) ||
-            url.endsWith(".mp4",  Qt::CaseInsensitive) ||
             url.endsWith(".aac",  Qt::CaseInsensitive) ||
             url.endsWith(".mod",  Qt::CaseInsensitive) ||
             url.endsWith(".mov",  Qt::CaseInsensitive) ||
             url.endsWith(".mkv",  Qt::CaseInsensitive) ||
             url.endsWith(".mpg",  Qt::CaseInsensitive) ||
             url.endsWith(".mpeg", Qt::CaseInsensitive) ||
+            url.endsWith(".ac3",  Qt::CaseInsensitive) ||
+            url.endsWith(".asf",  Qt::CaseInsensitive) ||
             url.endsWith(".avi",  Qt::CaseInsensitive) )
     {
         printf ("File added : %s\n", (const char*)fname.toUtf8() );
@@ -1227,28 +1317,28 @@ void qm_plistview::showLine_at(int y)
 void qm_plistview::set_auto_columns()
 {
     // we use setStretchLastSection(true) for col 5
-    plisthview->setResizeMode(0, QHeaderView::Fixed);
-    plisthview->setResizeMode(1, QHeaderView::Fixed);
-    plisthview->setResizeMode(4, QHeaderView::Fixed);
+    plisthview->setSectionResizeMode(0, QHeaderView::Fixed);
+    plisthview->setSectionResizeMode(1, QHeaderView::Fixed);
+    plisthview->setSectionResizeMode(4, QHeaderView::Fixed);
 
     if (config == NULL)
     {
-        plisthview->setResizeMode(2, QHeaderView::Stretch);
-        plisthview->setResizeMode(3, QHeaderView::Stretch);
+        plisthview->setSectionResizeMode(2, QHeaderView::Stretch);
+        plisthview->setSectionResizeMode(3, QHeaderView::Stretch);
         set_panel_maxmode(b_panel_max);
         return;
     }
 
     if (config->plist_auto_colwidth)
     {
-        plisthview->setResizeMode(2, QHeaderView::Stretch);
-        plisthview->setResizeMode(3, QHeaderView::Stretch);
+        plisthview->setSectionResizeMode(2, QHeaderView::Stretch);
+        plisthview->setSectionResizeMode(3, QHeaderView::Stretch);
         set_panel_maxmode(b_panel_max);
     }
     else
     {
-        plisthview->setResizeMode(2, QHeaderView::Interactive);
-        plisthview->setResizeMode(3, QHeaderView::Interactive);
+        plisthview->setSectionResizeMode(2, QHeaderView::Interactive);
+        plisthview->setSectionResizeMode(3, QHeaderView::Interactive);
         set_panel_maxmode(b_panel_max);
     }
 }

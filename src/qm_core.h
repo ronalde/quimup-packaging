@@ -1,7 +1,7 @@
 /*
 *  qm_core.h
 *  QUIMUP c class
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -37,7 +37,8 @@ public:
 	qm_player *player;	
 	
 public slots:
-	void on_message_from_2nd_instance(const QString&);	
+    void on_message_from_2nd_instance(const QString&);
+    void on_system_quit();
 };
 
 #endif // QM_CORE_H

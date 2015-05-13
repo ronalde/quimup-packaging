@@ -3,7 +3,7 @@
 ##	Author    : Johan Spee (quimup@coonsden.com)
 ##	Project   : Quimup
 ##	FileName  : Quimup.pro
-##	Date      : 2013-03-21T10:10:10
+##	Date      : 2015-01-21T10:10:10
 ##	License   : GPL
 ##	Comment   : Quimup is a client for MPD
 ##	Home Page : www.coonsden.com
@@ -13,26 +13,17 @@
 ##
 ###########################################################################################
 
-XUPProjectSettings {
-    EDITOR = QMake
-    QT_VERSION = Qt System (4.7.2)
-    OTHERS_PLATFORM_TARGET_RELEASE = quimup
-}
+QT       += core gui network
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+TARGET = quimup
 TEMPLATE = app
-LANGUAGE = C++/Qt4
-TARGET = $$quote(quimup)
-CONFIG -= qt
-CONFIG += qt release -O2
-BUILD_PATH = ./build
 
 CONFIG += link_pkgconfig
 PKGCONFIG = libmpdclient
+PKGCONFIG += taglib
 
-QMAKE_CFLAGS_RELEASE -= -O2
-QMAKE_CXXFLAGS_RELEASE -= -O2
-QMAKE_CFLAGS_RELEASE = -O3
-QMAKE_CXXFLAGS_RELEASE = -O3
+BUILD_PATH = ./build
 
 CONFIG(debug, debug|release) {
     #Debug
@@ -104,7 +95,3 @@ RESOURCES += src/quimup.qrc
 TRANSLATIONS += quimup_nl.ts \
     quimup_cs.ts
 
-QT = core gui network
-
-XUP.SHOW_QT_VERSION_WARNING = 0
-XUP.OTHERS_PLATFORM_TARGET_DEFAULT = quimup
