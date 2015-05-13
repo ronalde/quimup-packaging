@@ -1,7 +1,7 @@
 /*
 *  qm_player.h
 *  QUIMUP main player window
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -22,6 +22,7 @@
 #ifndef QM_PLAYER_H
 #define QM_PLAYER_H
 
+#include <QtWidgets>
 #include <QApplication>
 #include <QMainWindow>
 #include <QCloseEvent>
@@ -37,7 +38,8 @@
 #include <QTimer>
 #include <QSignalMapper>
 #include <QPalette>
-#include <QColorGroup>
+// #include <QColorGroup> // FIXME QT5
+
 #include <QDir>
 #include <QProcess>
 #include <QVBoxLayout>
@@ -56,6 +58,20 @@
 #include "qm_settings.h"
 #include "qm_browser.h"
 #include "qm_songinfo.h"
+
+// taglib related:
+#include <id3v2tag.h>
+#include <apetag.h>
+#include <flacpicture.h>
+#include <mpegfile.h>
+#include <vorbisfile.h>
+#include <flacfile.h>
+#include <mp4file.h>
+#include <mpcfile.h>
+#include <apefile.h>
+#include <wavpackfile.h>
+#include <asffile.h>
+#include <attachedpictureframe.h>
 
 
 class qm_player : public QMainWindow
@@ -95,6 +111,7 @@ private slots:
     void set_fonts();
     void on_curentsong_deleted();
     void on_volumedial(int);
+    void on_browser_keypress(QKeyEvent *);
  	void dragLeaveEvent(QDragLeaveEvent *);
 	void dragEnterEvent(QDragEnterEvent *);
 	void dragMoveEvent(QDragMoveEvent *);
@@ -215,6 +232,7 @@ private:
     QString into_time(int);
     void set_albumart(QString, int);
     bool go_find_art(QString &, QString);
+    QImage getTagImage(QString);
 
 protected:
     void closeEvent( QCloseEvent *);

@@ -1,7 +1,7 @@
 /*
 *  qm_libraryview.h
 *  QUIMUP library treeview
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -22,6 +22,7 @@
 #ifndef QM_LIBRARY_H
 #define QM_LIBRARY_H
 
+#include <QtWidgets>
 #include <QTreeWidget>
 #include <QHeaderView>
 #include <QTreeWidgetItem>

@@ -1,7 +1,7 @@
 /*
 *  qm_widget_ids.h
 *  QUIMUP ID's for widgets and tray-menu actions
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *

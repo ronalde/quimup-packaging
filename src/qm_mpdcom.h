@@ -1,7 +1,7 @@
 /*
 * qm_mpdcom.h
 *  QUIMUP MPD communicator class
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -41,7 +41,6 @@
 #include "qm_itemlist.h"
 #include "qm_commandlist.h"
 
-
 typedef struct qm_output
 {
 	int id;
@@ -79,17 +78,18 @@ public slots:
 	void volume_up(int);
 	void volume_down(int);
 	void set_seek(int);
-	void update_all();
+    void update_all();
+    void reset_playlist();
 	QString get_version();
 	qm_outputList get_outputs();
-	bool set_outputs(qm_outputList);
+    bool set_outputs(qm_outputList);
 	void set_xfade(int);
 	void set_config(qm_config*);
-	void set_replaygain_mode(int);
+    void set_replaygain_mode(int);
 	void configure();
 	int get_listchanger();
 	int execute_cmds(qm_commandList, bool);
-	bool execute_single_command(qm_mpd_command, bool);
+    bool execute_single_command(qm_mpd_command, bool);
 	void clear_list();
 	void shuffle_list();
 	void get_statistics();
@@ -132,7 +132,7 @@ private slots:
 	
 private:
 	//  functions
-	void get_playlist();
+    void get_playlist();
 	void get_songInfo_from(qm_songInfo *, mpd_song *);
 	QString get_from_etcdefaultmpd();
 	void find_config_files(bool);

@@ -1,7 +1,7 @@
 /*
 *  qm_Scroller.ccp
 *  QUIMUP graphical text scroller
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -127,7 +127,7 @@ void qm_Scroller::render()
     W_text = (virtual_label->minimumSizeHint()).width ();
     virtual_label->setGeometry(QRect(0, 0, W_text, H_display));
     
-    QPixmap qpx  = QPixmap::grabWidget(virtual_label);
+    QPixmap qpx = virtual_label->grab();
     QImg_fulltext = qpx.toImage();
     
     if (QImg_fulltext.width() >  W_display)

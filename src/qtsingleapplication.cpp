@@ -40,8 +40,7 @@
 
 #include "qtsingleapplication.h"
 #include "qtlocalpeer.h"
-#include <QtGui/QWidget>
-
+#include <QWidget>
 
 /*!
     \class QtSingleApplication qtsingleapplication.h
@@ -175,8 +174,8 @@ QtSingleApplication::QtSingleApplication(const QString &appId, int &argc, char *
     will be QCoreApplication::applicationFilePath(). \a argc, \a
     argv, and \a type are passed on to the QAppliation constructor.
 */
-QtSingleApplication::QtSingleApplication(int &argc, char **argv, Type type)
-    : QApplication(argc, argv, type)
+QtSingleApplication::QtSingleApplication(int &argc, char **argv)
+    : QApplication(argc, argv)
 {
     sysInit();
 }

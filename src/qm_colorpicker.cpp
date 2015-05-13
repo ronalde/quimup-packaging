@@ -1,7 +1,7 @@
 /*
 *  qm_colorpicker.cpp
 *  QUIMUP window to select custom colors
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *

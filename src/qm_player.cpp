@@ -1,7 +1,7 @@
 /*
 *  qm_player.cpp
 *  QUIMUP main player window
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -59,12 +59,12 @@ qm_player::qm_player()
     // connect and set status
     if (config->auto_connect)
     {
-        printf ("Autoconnecting, as configured\n");
+        printf ("Auto-connecting, as configured\n");
 
         if (!mpdCom->mpd_connect())
         {
             printf ("Failed to connect to MPD\n");
-            mpdCom->show_messagebox(tr("Could not connect to MPD!"), tr("Make sure MPD is installed and check the 'Connect' tab in the 'settings' window."));
+            mpdCom->show_messagebox(tr("Could not connect to MPD!"), tr("Make sure MPD is installed and check the 'Connect' tab in the 'Settings' window."));
         }
     }
     else
@@ -288,6 +288,7 @@ void qm_player::setupUI()
     // end buttonmapper
 
     QObject::connect(ds_progress, SIGNAL(pressed(QMouseEvent*)), this, SLOT(lock_progress(QMouseEvent*)));
+
     QObject::connect(ds_progress, SIGNAL(clicked()), this, SLOT(unlock_progress()));
 
     minimizer = new QTimer();
@@ -325,6 +326,7 @@ void qm_player::setupUI()
     a_openaart->setIcon(QIcon(":/menu_view.png"));
     QObject::connect( a_openaart, SIGNAL( triggered() ), this, SLOT( show_albumart() ) );
     context_menu->addAction(a_openaart);
+    context_menu->addSeparator();
 
     a_loadtags = new QAction(context_menu);
     a_loadtags->setText(tr("Rescan tags"));
@@ -404,6 +406,7 @@ void qm_player::minimice()
 void qm_player::init_vars()
 {
     browser_window = new qm_browser();
+    QObject::connect(browser_window, SIGNAL(sgnl_keypressed(QKeyEvent*)), this, SLOT(on_browser_keypress(QKeyEvent*)));
 
     settings_window = new qm_settings();
     QObject::connect(settings_window, SIGNAL(sgnl_fonts()), this, SLOT(set_fonts()));
@@ -425,15 +428,15 @@ void qm_player::init_vars()
     browser_window->plist_view->set_config(config);
     browser_window->lib_view->set_config(config);
 
-    if (config->version != "1.3.1")
+    if (config->version != "1.4.0")
     {
-        config->version = "1.3.1";
+        config->version = "1.4.0";
         QMessageBox msgBox;
         msgBox.setWindowTitle("Quimup");
         msgBox.setIcon(QMessageBox::Information);
         msgBox.setText("<b>" + tr("Welcome to Quimup") + " " + config->version + "</b>");
 
-        QString message = tr("Note that Quimup must be able to access MPD's music directory to find albumart and use external programs.")
+        QString message = tr("Note that Quimup must be able to access MPD's music directory to find album-art and use external programs.")
         + "\n\n"
         + tr("Files can be added directly from your file manager (drag & drop or 'open with'), but only if you connect to MPD using a socket.")
         + "\n\n"
@@ -761,6 +764,9 @@ void qm_player::on_new_song()
 
 void qm_player::on_new_status(mpd_status *sInfo)
 {
+    if (sInfo == NULL)
+        return;
+
     // set the playback modes in the playlist menu
     if ( mpd_status_get_repeat(sInfo) != b_repeat)
     {
@@ -815,7 +821,7 @@ void qm_player::on_new_status(mpd_status *sInfo)
             if (timenow != song_previous_time)
             {
                 song_previous_time = timenow;
-                // some tracks play a bit too long (honestly!)
+                // some tracks play a bit too long (honestly)
                 if (timenow > song_total_time)
                     timenow = song_total_time;
                 ds_progress->setValue(timenow);
@@ -886,7 +892,7 @@ void qm_player::retranslateUI()
     {
         lb_time->setToolTip(tr("Click to toggle time mode"));
         bt_sizer->setToolTip(tr("Mini-Maxi mode"));
-        bt_browser->setToolTip(tr("Media Browser"));
+        bt_browser->setToolTip(tr("Media Browser & Playlist"));
         bt_setts->setToolTip(tr("Settings"));
     }
 }
@@ -1319,7 +1325,7 @@ void qm_player::lock_progress(QMouseEvent *e)
 {
     if (!b_stream && current_status == MPD_STATE_PLAY && b_mpd_connected)
     {
-        b_lock_progress = TRUE;
+        b_lock_progress = true;
         // Get mouse x pos within widget
         int x = e->x();
         x = (x * song_total_time) / 324; // 324 is width of widget
@@ -1333,7 +1339,7 @@ void qm_player::unlock_progress()
     if (!b_stream && current_status == MPD_STATE_PLAY && b_mpd_connected)
     {
         mpdCom->set_seek( ds_progress->value() );
-        b_lock_progress = FALSE;
+        b_lock_progress = false;
     }
 }
 
@@ -1404,7 +1410,7 @@ void qm_player::set_fonts()
 void qm_player::set_albumart(QString sub_path, int type)
 {
     QImage temp;
-    bool b_file_from_disk = true;
+    bool b_file_from_disk_or_tag = true;
     bool b_file_ok = false;
 
     if (type == TP_NOSONG || sub_path == "nopic" || sub_path.isEmpty())
@@ -1427,7 +1433,7 @@ void qm_player::set_albumart(QString sub_path, int type)
         }
         temp = QImage(img_nopic);
         current_art_path = "nopic";
-        b_file_from_disk = false;
+        b_file_from_disk_or_tag = false;
         b_file_ok = true;
     }
 
@@ -1451,11 +1457,12 @@ void qm_player::set_albumart(QString sub_path, int type)
         }
         temp = QImage(img_stream);
         current_art_path = "onair";
-        b_file_from_disk = false;
+        b_file_from_disk_or_tag = false;
         b_file_ok = true;
     }
 
-    // [1] find a suitable image
+    // ALBUM-ART:
+
     QString artPath;
     if (type == TP_SONGX)
     {
@@ -1467,7 +1474,29 @@ void qm_player::set_albumart(QString sub_path, int type)
     else // type == TP_SONG
         artPath = config->mpd_musicpath + sub_path;
 
-    if (b_file_from_disk)
+    // first try tag
+    bool b_image_from_tag = false;
+    if (b_file_from_disk_or_tag)
+    {
+        QString filepath = current_songinfo->file;
+        int i = filepath.lastIndexOf( '/' );
+        filepath = filepath.right(filepath.length() - i);
+        filepath = artPath + filepath;
+
+        // try to load the image
+        temp = getTagImage(filepath);
+        if (temp.isNull())
+            b_file_ok =  false;
+        else
+        {
+            b_file_ok =  true;
+            b_image_from_tag = true;
+            current_art_path = sub_path;
+        }
+    }
+
+    // next try image file if tag failed
+    if (b_file_from_disk_or_tag && !b_file_ok)
     {
         QDir dir(artPath);
         if (!dir.exists())
@@ -1492,7 +1521,7 @@ void qm_player::set_albumart(QString sub_path, int type)
 
             current_art_path = sub_path;
 
-            // [2] load the image
+            // load the image
             if (b_file_ok)
             {
                 temp.load(artPath);
@@ -1510,18 +1539,18 @@ void qm_player::set_albumart(QString sub_path, int type)
     {
         current_art_path = "nopic";
         temp = QImage(img_nopic);
-        b_file_from_disk = false;
+        b_file_from_disk_or_tag = false;
     }
 
     // resize the image
-    if (b_file_from_disk)
+    if (b_file_from_disk_or_tag)
         temp = temp.scaled( 200, 200, Qt::KeepAspectRatio , Qt::SmoothTransformation );
     albumart_H = temp.height();
     albumart_W = temp.width();
 
-    if (b_file_from_disk)
+    if (b_file_from_disk_or_tag)
     {
-        //  [3] add alpha for xfading
+        //  add alpha for xfading
         if (!temp.hasAlphaChannel())
         {
             QImage aChannel = QImage(albumart_W, albumart_H, QImage::Format_RGB32);
@@ -1546,8 +1575,8 @@ void qm_player::set_albumart(QString sub_path, int type)
         }
     }
 
-    // [4] add border (if a file is used)
-    if (b_file_from_disk)
+    // add border
+    if (b_file_from_disk_or_tag)
     {
         for (int  h = 0; h < albumart_H; h++)
         {
@@ -1561,7 +1590,7 @@ void qm_player::set_albumart(QString sub_path, int type)
         }
     }
 
-    // [5] show image
+    // finally show the image
     if (config->player_maxmode)
     {
         pxb_albmart  = QPixmap::fromImage(temp);
@@ -1584,9 +1613,14 @@ void qm_player::set_albumart(QString sub_path, int type)
         lb_albumart->setPixmap(pxb_xfading);
     }
 
-    // [6] set tooltip
+    // and set tooltip
     if (config->show_tooltips && b_file_ok)
-        lb_albumart->setToolTip(tr("Album art"));
+    {
+        if (b_image_from_tag)
+            lb_albumart->setToolTip(tr("Album art (from tag)"));
+        else
+            lb_albumart->setToolTip(tr("Album art (from file)"));
+    }
     if (config->show_tooltips && !b_file_ok)
         lb_albumart->setToolTip(tr("No album art"));
 }
@@ -1808,6 +1842,25 @@ void qm_player::on_shudown()
 }
 
 
+// connecting signal directly to keyPressEvent() does not work, so:
+void qm_player::on_browser_keypress(QKeyEvent *event)
+{
+    switch (event->key())
+    {
+        case Qt::Key_MediaPause:
+        case Qt::Key_MediaPlay:
+        case Qt::Key_MediaNext:
+        case Qt::Key_MediaPrevious:
+        case Qt::Key_MediaStop:
+        {
+            qm_player::keyPressEvent(event);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
 void qm_player::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key())
@@ -1817,6 +1870,41 @@ void qm_player::keyPressEvent(QKeyEvent *event)
             if (event->modifiers() & Qt::ControlModifier)
                 on_shudown();
             break;
+        }
+        case Qt::Key_MediaPause:
+        {
+            printf ("Key_MediaPause pressed\n");
+            on_signal(ID_play);
+            break;
+
+        }
+        case Qt::Key_MediaPlay:
+        {
+            printf ("Key_MediaPlay pressed\n");
+            on_signal(ID_play);
+            break;
+
+        }
+        case Qt::Key_MediaNext:
+        {
+            printf ("Key_MediaNext pressed\n");
+            on_signal(ID_next);
+            break;
+
+        }
+        case Qt::Key_MediaPrevious:
+        {
+            printf ("Key_MediaPrevious pressed\n");
+            on_signal(ID_prev);
+            break;
+
+        }
+        case Qt::Key_MediaStop:
+        {
+            printf ("Key_MediaStop pressed\n");
+            on_signal(ID_stop);
+            break;
+
         }
         default:
             QMainWindow::keyPressEvent(event);
@@ -1856,6 +1944,326 @@ void qm_player::dropEvent(QDropEvent *e)
     e->ignore();
 }
 ///////////////// end D&D Stuff ///////////////////////////
+
+
+// get coverart from tag
+QImage qm_player::getTagImage(QString qs_file)
+{
+
+    QImage image = QImage();
+
+    // check if file (still) exists
+    QFile chkfile(qs_file);
+    if (!chkfile.exists())
+        return image;
+
+    QByteArray byteArray = qs_file.toUtf8();
+    const char* file = byteArray.constData();
+
+
+    if ( qs_file.endsWith(".mp3",  Qt::CaseInsensitive) )
+    {
+        TagLib::MPEG::File mpgfile(file);
+        if (mpgfile.isValid())
+        {
+            if (mpgfile.ID3v2Tag()) // has ID3v2 tag
+            {
+                TagLib::ID3v2::FrameList flist = mpgfile.ID3v2Tag()->frameList("APIC");
+
+                if(!flist.isEmpty())
+                {
+                    TagLib::ID3v2::AttachedPictureFrame *pframe =
+                        static_cast<TagLib::ID3v2::AttachedPictureFrame *>(flist.front());
+
+                    if ( image.loadFromData((const uchar *) pframe->picture().data(), pframe->picture().size()) )
+                    {
+                        printf ("Cover art from mp3 tag\n");
+                        return image;
+                    }
+                }
+            }
+            else
+            if( mpgfile.APETag())
+            {
+                TagLib::APE::Tag* tag = static_cast<TagLib::APE::Tag *>(mpgfile.APETag());
+                const TagLib::APE::ItemListMap& listMap = tag->itemListMap();
+
+                if (listMap.contains("COVER ART (FRONT)"))
+                {
+                   const TagLib::ByteVector nullStringTerminator(1, 0);
+
+                   TagLib::ByteVector item = listMap["COVER ART (FRONT)"].value();
+                   int pos = item.find(nullStringTerminator);	// Skip the filename
+
+                   if (++pos > 0)
+                   {
+                       const TagLib::ByteVector & picvect = item.mid(pos);
+                       QByteArray image_data( picvect.data(), picvect.size() );
+                       if (image.loadFromData(image_data))
+                       {
+                         printf ("Cover art from ape tag\n");
+                         return image;
+                       }
+                   }
+                }
+            }
+        }
+    }
+    else
+    if ( qs_file.endsWith(".ogg",  Qt::CaseInsensitive) ||
+         qs_file.endsWith(".oga",  Qt::CaseInsensitive)  )
+    {
+        TagLib::Ogg::Vorbis::File oggfile(file);
+        if(oggfile.isValid())
+        {
+            if (oggfile.tag()) // has XiphComment tag
+            {
+                TagLib::Ogg::XiphComment *m_tag = static_cast<TagLib::Ogg::XiphComment *>(oggfile.tag());
+
+                TagLib::StringList block;
+
+                if( m_tag->fieldListMap().contains( "METADATA_BLOCK_PICTURE" ) )
+                    block = m_tag->fieldListMap()[ "METADATA_BLOCK_PICTURE" ];
+                else
+                if( m_tag->fieldListMap().contains( "COVERART" ) )
+                     block = m_tag->fieldListMap()[ "COVERART" ];
+
+                if (!block.isEmpty())
+                {
+                    for( TagLib::StringList::ConstIterator i = block.begin(); i != block.end(); ++i )
+                    {
+                        QByteArray data( QByteArray::fromBase64( i->to8Bit().c_str() ) );
+                        TagLib::ByteVector tdata( data.data(), data.size() );
+
+                        TagLib::FLAC::Picture fpic;
+
+                        if(!fpic.parse(tdata))
+                            continue;
+
+                        QByteArray image_data( fpic.data().data(), fpic.data().size() );
+
+                        if (image.loadFromData(image_data))
+                        {
+                            printf ("Cover art from ogg tag\n");
+                            return image;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else
+    if ( qs_file.endsWith(".flac",  Qt::CaseInsensitive) )
+    {
+        TagLib::FLAC::File flacfile(file);
+        if (flacfile.isValid())
+        {
+            if (flacfile.ID3v2Tag()) // has ID3v2 tag
+            {
+                TagLib::ID3v2::FrameList flist = flacfile.ID3v2Tag()->frameList("APIC");
+
+                if(!flist.isEmpty())
+                {
+                    TagLib::ID3v2::AttachedPictureFrame *pframe =
+                        static_cast<TagLib::ID3v2::AttachedPictureFrame *>(flist.front());
+
+                    if ( image.loadFromData((const uchar *) pframe->picture().data(), pframe->picture().size()) )
+                    {
+                        printf ("Cover art from flac (ID3v2) tag\n");
+                        return image;
+                    }
+                }
+            }
+
+            if (flacfile.tag()) // has flac tag
+            {
+                const TagLib::List<TagLib::FLAC::Picture*>& picList = flacfile.pictureList();
+
+                if (!picList.isEmpty())
+                {
+                    TagLib::FLAC::Picture* fpic = picList[0];
+
+                    QByteArray image_data( fpic->data().data(), fpic->data().size() );
+
+                    if (image.loadFromData(image_data))
+                    {
+                        printf ("Cover art from flac tag\n");
+                        return image;
+                    }
+                }
+            }
+        }
+    }
+    else
+    if ( qs_file.endsWith(".mp4",  Qt::CaseInsensitive) ||
+         qs_file.endsWith(".m4a",  Qt::CaseInsensitive) ||
+         qs_file.endsWith(".aac",  Qt::CaseInsensitive)  )
+    {
+        TagLib::MP4::File mp4file(file);
+        if (mp4file.isValid())
+        {
+            if (mp4file.tag()) // has MP4 tag
+            {
+                TagLib::MP4::Tag *tag = static_cast<TagLib::MP4::Tag *>(mp4file.tag());
+                TagLib::MP4::ItemListMap itemsListMap = tag->itemListMap();
+                if (tag->itemListMap().contains("covr"))
+                {
+                    TagLib::MP4::Item coverItem = itemsListMap["covr"];
+                    TagLib::MP4::CoverArtList coverArtList = coverItem.toCoverArtList();
+                    TagLib::MP4::CoverArt coverArt = coverArtList.front();
+                    if ( image.loadFromData((const uchar *) coverArt.data().data(),coverArt.data().size()) )
+                    {
+                        printf ("Cover art from mp4 tag\n");
+                        return image;
+                    }
+                }
+            }
+        }
+    }
+    else
+    if ( qs_file.endsWith(".mpc",  Qt::CaseInsensitive) ||
+         qs_file.endsWith(".mpp",  Qt::CaseInsensitive)  )
+    {
+        TagLib::MPC::File mpcfile(file);
+        if (mpcfile.isValid())
+        {
+            if( mpcfile.APETag())
+            {  
+                TagLib::APE::Tag* tag = static_cast<TagLib::APE::Tag *>(mpcfile.APETag());
+                const TagLib::APE::ItemListMap& listMap = tag->itemListMap();
+
+                if (listMap.contains("COVER ART (FRONT)"))
+                {
+                   const TagLib::ByteVector nullStringTerminator(1, 0);
+
+                   TagLib::ByteVector item = listMap["COVER ART (FRONT)"].value();
+                   int pos = item.find(nullStringTerminator);	// Skip the filename
+
+                   if (++pos > 0)
+                   {
+                       const TagLib::ByteVector & picvect = item.mid(pos);
+                       QByteArray image_data( picvect.data(), picvect.size() );
+                       if (image.loadFromData(image_data))
+                       {
+                         printf ("Cover art from mpc (ape) tag\n");
+                         return image;
+                       }
+                   }
+                }
+            }
+        }
+    }
+    else
+    if ( qs_file.endsWith(".wv",  Qt::CaseInsensitive) )
+    {
+        TagLib::WavPack::File wvpfile(file);
+        if (wvpfile.isValid())
+        {
+            if( wvpfile.APETag())
+            {
+                TagLib::APE::Tag* tag = static_cast<TagLib::APE::Tag *>(wvpfile.APETag());
+                const TagLib::APE::ItemListMap& listMap = tag->itemListMap();
+
+                if (listMap.contains("COVER ART (FRONT)"))
+                {
+                    printf ("APE tag  COVER ART found\n");
+                   const TagLib::ByteVector nullStringTerminator(1, 0);
+
+                   TagLib::ByteVector item = listMap["COVER ART (FRONT)"].value();
+                   int pos = item.find(nullStringTerminator);	// Skip the filename
+
+                   if (++pos > 0)
+                   {
+                       const TagLib::ByteVector & picvect = item.mid(pos);
+                       QByteArray image_data( picvect.data(), picvect.size() );
+                       if (image.loadFromData(image_data))
+                       {
+                         printf ("Cover art from wv (ape) tag\n");
+                         return image;
+                       }
+                   }
+                }
+            }
+        }
+    }
+    else
+    if ( qs_file.endsWith(".ape",  Qt::CaseInsensitive) )
+    {
+        TagLib::WavPack::File apefile(file);
+        if (apefile.isValid())
+        {
+            if( apefile.APETag())
+            {
+                TagLib::APE::Tag* tag = static_cast<TagLib::APE::Tag *>(apefile.APETag());
+                const TagLib::APE::ItemListMap& listMap = tag->itemListMap();
+
+                /* // DEBUG: List all tags
+                for( TagLib::APE::ItemListMap::ConstIterator it = listMap.begin(); it != listMap.end(); ++it )
+                {
+                    QString value = TStringToQString( it->first );
+                    QByteArray byteArray = value.toUtf8();
+                    const char* entry = byteArray.constData();
+                    printf ("Ape_tag: [%s]\n",entry);
+                }  */
+
+                if (listMap.contains("COVER ART (FRONT)"))
+                {
+                   const TagLib::ByteVector nullStringTerminator(1, 0);
+
+                   TagLib::ByteVector item = listMap["COVER ART (FRONT)"].value();
+                   int pos = item.find(nullStringTerminator);	// Skip the filename
+
+                   if (++pos > 0)
+                   {
+                       const TagLib::ByteVector & picvect = item.mid(pos);
+                       QByteArray image_data( picvect.data(), picvect.size() );
+                       if (image.loadFromData(image_data))
+                       {
+                         printf ("Cover art from ape tag\n");
+                         return image;
+                       }
+                   }
+                }
+            }
+        }
+    }
+    else
+    if ( qs_file.endsWith(".asf",  Qt::CaseInsensitive) )
+    {
+        TagLib::ASF::File asffile(file);
+        if (asffile.isValid())
+        {
+            if (asffile.tag()) // has asf tag
+            {
+                TagLib::ASF::Tag *tag = static_cast<TagLib::ASF::Tag *>(asffile.tag());
+                const TagLib::ASF::AttributeListMap& attrListMap = tag->attributeListMap();
+                if (attrListMap.contains("WM/Picture"))
+                {
+                    const TagLib::ASF::AttributeList& attrList = attrListMap["WM/Picture"];
+
+                    if (!attrList.isEmpty())
+                    {
+                        //grab the first cover.
+                        TagLib::ASF::Picture pic = attrList[0].toPicture();
+                        if (pic.isValid())
+                        {
+                            const QByteArray image_data( pic.picture().data(), pic.picture().size() );
+
+                            if (image.loadFromData(image_data))
+                            {
+                                printf ("Cover art from asf tag\n");
+                                return image;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return image;
+}
+
 
 qm_player::~qm_player()
 {
