@@ -7,3 +7,10 @@ debian/usr/share/pixmaps/quimup16.xpm
 debian/usr/share/pixmaps/quimup48.png
 debian/usr/share/applications/quimup.desktop
 quimup
+src/resources/tr_consume.png
+src/resources/tr_played_reset.png
+src/resources/tr_plistnew.png
+src/resources/tr_purge.png
+src/resources/tr_single.png
+src/resources/tr_update.png
+
