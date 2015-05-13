@@ -1,7 +1,7 @@
 /*
 *  qm_libraryview.cpp
 *  QUIMUP library treeview
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -63,6 +63,7 @@ qm_libview::qm_libview(QWidget *parent)
     append->setIcon(QIcon(":/tr_plistappend.png"));
     QObject::connect( append, SIGNAL( triggered() ), this, SLOT( on_append() ) );
     context_menu->addAction(append);
+    context_menu->addSeparator();
 
     a_update = new QAction(context_menu);
     a_update->setText(tr("Update selection"));
@@ -87,6 +88,7 @@ qm_libview::qm_libview(QWidget *parent)
     a_delete->setIcon(QIcon(":/tr_redcross.png"));
     QObject::connect( a_delete, SIGNAL( triggered() ), this, SLOT( on_delete() ) );
     context_menu->addAction(a_delete);
+    context_menu->addSeparator();
 
     QAction * a_collapse = new QAction(context_menu);
     a_collapse->setText(tr("Collapse all"));
@@ -105,7 +107,7 @@ void qm_libview::fix_header()
  {
     libhview = new QHeaderView(Qt::Horizontal, this);
     libhview->setHighlightSections(false);
-    libhview->setClickable(false);
+    libhview->setSectionsClickable(false);
     libhview->setDefaultAlignment(Qt::AlignLeft);
     libhview->setStretchLastSection(true);
     libhview->setMinimumSectionSize(80);
@@ -958,13 +960,25 @@ void qm_libview::expand_directory(QTreeWidgetItem * active_item)
             active_item->addChild(new_item);
             add_dummy_to(new_item);
         }
-
+        else
         if ( iter->type == TP_SONG )
         {
             new_item = new QTreeWidgetItem();
             new_item->setText(0, iter->name);
             new_item->setIcon(0, QIcon(":/tr_track.png"));
             add_songdata_toItem(new_item, *iter);
+            active_item->addChild(new_item);
+        }
+        else
+        if ( iter->type == TP_PLAYLIST )
+        {
+            new_item = new QTreeWidgetItem();
+            new_item->setText(0, iter->name);
+            new_item->setIcon(0, QIcon(":/tr_playlist.png"));
+            //add_songdata_toItem(new_item, *iter);
+            new_item->settype(TP_PLAYLIST);
+            new_item->setfile(iter->file);
+            new_item->setname(iter->name);
             active_item->addChild(new_item);
         }
     }
@@ -1709,17 +1723,17 @@ void qm_libview::set_auto_columns()
 {
     if (config == NULL)
     {
-        libhview->setResizeMode(QHeaderView::Stretch);
+        libhview->setSectionResizeMode(QHeaderView::Stretch);
         return;
     }
 
     if (config->lib_auto_colwidth)
     {
-        libhview->setResizeMode(QHeaderView::Stretch);
+        libhview->setSectionResizeMode(QHeaderView::Stretch);
     }
     else
     {
-        libhview->setResizeMode(QHeaderView::Interactive);
+        libhview->setSectionResizeMode(QHeaderView::Interactive);
         set_panel_maxmode(b_panel_max);
     }
 }

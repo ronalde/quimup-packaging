@@ -1,7 +1,7 @@
 /*
 *  qm_browser.h
 *  QUIMUP library & playlist window
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -50,6 +50,9 @@
 class qm_browser : public QMainWindow
 {
 	Q_OBJECT
+
+protected:
+    void keyPressEvent(QKeyEvent *);
 
 public:
 	qm_browser();
@@ -150,6 +153,9 @@ protected:
 	void hideEvent(QHideEvent *);
 	void showEvent(QShowEvent *);
 	void resizeEvent (QResizeEvent *);
+
+signals:
+    void sgnl_keypressed(QKeyEvent *);
 };
 
 #endif // qm_browser_H

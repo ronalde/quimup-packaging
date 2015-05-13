@@ -1,7 +1,7 @@
 /*
 *  qm_browser.cpp
 *  QUIMUP library & playlist window
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -82,7 +82,7 @@ void qm_browser::setupUI()
     bt_library->setMinimumSize(QSize(24, 22));
 	bt_library->setMaximumHeight(22);
     bt_library->setIcon(QIcon(":/tr_expand1.png"));
-    bt_library->setFlat(true);
+    //bt_library->setFlat(true);
     hbox_leftop->addWidget(bt_library);
     spacer2 = new QSpacerItem( 0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum );
     hbox_leftop->addItem(spacer2);
@@ -148,7 +148,7 @@ void qm_browser::setupUI()
     bt_playlist->setMinimumSize(QSize(24, 22));
 	bt_playlist->setMaximumHeight(22);
     bt_playlist->setIcon(QIcon(":/tr_expand1.png"));
-    bt_playlist->setFlat(true);
+    //bt_playlist->setFlat(true);
     hbox_rightop->addWidget(bt_playlist);
     spacer4 = new QSpacerItem( 0, 0, QSizePolicy::Expanding, QSizePolicy::Minimum );
     hbox_rightop->addItem(spacer4);
@@ -746,6 +746,44 @@ void qm_browser::set_colors(QPalette pal_top)
 	//lb_pliststats->setPalette(pal_bottom);
 }
 
+void qm_browser::keyPressEvent(QKeyEvent *event)
+{
+    switch (event->key())
+    {
+        case Qt::Key_MediaPause:
+        {
+            emit sgnl_keypressed(event);
+            break;
+
+        }
+        case Qt::Key_MediaPlay:
+        {
+            emit sgnl_keypressed(event);
+            break;
+
+        }
+        case Qt::Key_MediaNext:
+        {
+            emit sgnl_keypressed(event);
+            break;
+
+        }
+        case Qt::Key_MediaPrevious:
+        {
+            emit sgnl_keypressed(event);
+            break;
+
+        }
+        case Qt::Key_MediaStop:
+        {
+            emit sgnl_keypressed(event);;
+            break;
+
+        }
+        default:
+            QMainWindow::keyPressEvent(event);
+    }
+}
 
 qm_browser::~qm_browser()
 {}

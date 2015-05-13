@@ -9,13 +9,13 @@
     __________________________________________________________________________
 
     QUIMUP
-    version 1.3.1
+    version 1.4.0
 
-    for MPD 0.16.0 and above
+    for MPD 0.17.0 and above
     __________________________________________________________________________
 
     QUIMUP is a client for the Music Player Daemon (MPD) written in c++ and
-    QT4. The program can be used with most Linux desktops (KDE, GNOME, XFCE)
+    QT5. The program can be used with most Linux desktops (KDE, GNOME, XFCE)
     and is covered by the General Public License (see LICENSE below).
 
     The clean interface makes controlling MPD's features easy and intuitive.
@@ -23,7 +23,7 @@
     drag-&-drop; all playback functions are accessible from the system tray.
     Quimup aims to turn MPD into a perfect desktop music player.
 
-    Copyright (C) 2008 - 2013 Johan Spee
+    Copyright (C) 2008 - 2015 Johan Spee
     quimup@coonsden.com
     www.coonsden.com
     __________________________________________________________________________
@@ -47,17 +47,21 @@
 
     DEPENDENCIES
 
-    REQUIRES : MPD 0.16.x (preferably 0.17.x)
-    DEPENDS  : libmpdclient2 (>= 2.3)
-    DEPENDS  : libqtcore4    (>= 4.8)
-    DEPENDS  : libqtgui4     (>= 4.8)
-    DEPENDS  : libqt4-network(>= 4.8)
+    REQUIRES : MPD             (>= 0.17)
+    
+    DEPENDS  : libmpdclient2   (>= 2.3 )
+    DEPENDS  : libtag1-vanilla (>= 1.7 )
+      QT 5:
+    DEPENDS  : qtcore          (>= 5.1 )
+    DEPENDS  : qtgui           (>= 5.1 )
+    DEPENDS  : qtnetwork       (>= 5.1 )
+    
 
-    To COMPILE from source additionally install the QT4 and libmpdclient
-    development files (on Debian libmpdclient-dev and libqt4-dev) and the
-    usual: qmake, make, gcc, cpp, g++, pkg-config, autoconf etc.
+    To COMPILE from source additionally install the QT5, libmpdclient and
+    libtag development files (libmpdclient-dev, qtbase5-dev, libtag1-dev)
+    and the usual: qmake, make, gcc, cpp, g++, pkg-config, autoconf etc.
 
-    [1] To create the makefile run: qmake (or qmake-qt4).
+    [1] To create the makefile run: qmake (or qmake-qt5).
 
     [2] To compile, next run: make.
 
@@ -68,12 +72,12 @@
 
     KDE, GNOME and XFCE
 
-    Altough the program depends on QT it does not require KDE or depend on
-    other KDE libraries, nor is it integrated with KDE in any way.
+    Altough the program depends on some QT libraries it does not require KDE
+    or depend on other KDE libraries, nor is it integrated with KDE in any way.
 
     __________________________________________________________________________
 
-    USING QUIMUP
+    ** USING QUIMUP **
 
     CHECK OUT : FAQ.txt
     CHECK OUT : TIPS IN THE SETTINGS WINDOW's ABOUT TAB
@@ -93,6 +97,7 @@
     set exactly the same.
 
     It may be necessary to associate relevant file types to 'open with' 
-    Quimup (this is usually done in the file's 'properties' tab).
+    Quimup (this is usually done in the file's 'properties' tab). Make sure
+    to use 'quimup %U' rather than just 'quimup' as command.
     __________________________________________________________________________
 

@@ -1,7 +1,7 @@
 /*
 *  qm_settings.cpp
 *  QUIMUP settings window
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -603,7 +603,7 @@ void qm_settings::retranslateUI()
     tab_widget->setTabText(tab_widget->indexOf(tab_client), tr("Client") + " ");
     tab_widget->setTabText(tab_widget->indexOf(tab_style), tr("Style") + " ");
     tab_widget->setTabText(tab_widget->indexOf(tb_about), tr("About") + " ");
-    QString s_tips     = "<font face=\"Sans Serif\"><p align=\"center\"><br><b>Q</b>t <b>U</b>ser <b>I</b>nterface for the <b>MU</b>sic <b>P</b>layer daemon<br><br>\251 2008-2013 Johan Spee<br>quimup@coonsden.com<br><br><font color=\"darkblue\">";
+    QString s_tips     = "<font face=\"Sans Serif\"><p align=\"center\"><br><b>Q</b>t <b>U</b>ser <b>I</b>nterface for the <b>MU</b>sic <b>P</b>layer daemon<br><br>© 2008-2015 Johan Spee<br>quimup@coonsden.com<br><br><font color=\"darkblue\">";
             s_tips    += tr("License")
                        + "<div align=\"justify\"> <font size=\"-1\">"
                        + "This program is free software. You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but without any warrenty; without even the implied warranty of merchantability or fitness for a particular purpose. See the GNU General Public License for details."
@@ -626,7 +626,7 @@ void qm_settings::retranslateUI()
                        + "<br><br>"
                        + tr("A <b>scrolling title</b> speeds up (quite a bit) when the mouse cursor is moved over it.")
                        + "<br><br>"
-                       + tr("<b>Album-art</b> must be located in the same directory with the music file. The program looks for a filename that matches")
+                       + tr("Quimup first checks the audio-file for embedded <b>Album-art</b>. If that fails it checks the directory where  the audio file is located for a bitmap that matches ")
                        + " <i>*albumart*, *folder*, *front*, *cover* or *</i> "
                        + tr("(in that order). Note that Quimup must be able to access MPD's music directory (see above).")
                        + "<br><br>"

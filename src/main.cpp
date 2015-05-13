@@ -1,7 +1,7 @@
 /*
 *  main.cpp
 *  QUIMUP main program file
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -20,6 +20,7 @@
 */
 
 #include <QTranslator>
+#include <QLibraryInfo>
 #include <QLocale>
 #include <QTextCodec>
 #include <QDir>
@@ -64,32 +65,31 @@ int main(int argc, char **argv)
         else
         if (msg == "-h" || msg == "-help")
         {
-            printf ("----\nQuimup version 1.3.1\n"); // VERSION //
-            printf ("© 2008-2013 Johan Spee <quimup@coonsden.com>\n");
+            printf ("----\nQuimup version 1.4.0\n"); // VERSION //
+            printf ("© 2008-2014 Johan Spee <quimup@coonsden.com>\n");
             printf ("This program is licensed by the GPL and distributed in the hope that it will be useful, but without any warranty.\n");
             printf ("----\ncommand line parameters:\n");
             printf (" -h(elp)           show this information and exit\n");
             printf (" -i(nstance)       force a new instance of Quimup\n");
-            printf (" -l(ocale) xx      use locale xx (fr, po, en_GB, etc)\n");
+            printf (" -l(ocale) xx      use locale 'xx' (fr, po, en_GB, etc) or 'none' to force internal locale\n");
+            printf (" -l(ocale) file    use locale from full path to quimup_xx.qm file\n");
             printf (" -p(lay) %%U        play files in %%U (or %%F) in new playlist\n");
             printf ("  %%U               append files in %%U (or %%F) to the playlist\n----\n");
             return 0;
         }
-        else
-        // if URL
+        else // if URL
         if ( msg.startsWith("file://"))
         {
             // we have a string in URL format, so convert special chars:
             msg = ( QUrl::fromEncoded ((const char*)msg.toUtf8()) ).toString();
-            message += msg;
+            message.append(msg);
             filecount++;
         }
-        else
-        //  if plain path
+        else //  if plain path
         if (msg.startsWith("/") )
         {
             msg = "file://" + msg; // used as separator
-            message += msg;
+            message.append(msg);
             filecount++;
         }
     }
@@ -103,67 +103,72 @@ int main(int argc, char **argv)
 
     printf ("Quimup : starting new instance\n");
 
-    //// Localization
+    //// Localization start >
     QTranslator trnsltr;
-    QTextCodec::setCodecForTr(QTextCodec::codecForName("utf8"));
-
+    //QTextCodec::setCodecForTr(QTextCodec::codecForName("utf8"));
+    bool b_locale_loaded = false;
     bool b_locale_default = true;
-    if (locale == "xx")
+    if (locale == "xx") // no -l parameter was passed
         locale = QLocale::system().name();
     else
         b_locale_default = false;
 
-    if (locale != "xx")
+    if (locale != "none")
     {
-        if (b_locale_default)
-            printf ("Locale : ");
-        else
+        if (!b_locale_default)
+        {
             printf ("Locale : '%s': ", (const char*)locale.toUtf8());
-
-        if ( locale.startsWith("/") && locale.endsWith(".qm")) // full path to a file
-        {
-            if ( trnsltr.load(locale) )
+            if ( locale.startsWith("/") && locale.endsWith(".qm")) // full path to a file
             {
-                if (b_locale_default)
-                    printf ("using default\n");
+                if ( trnsltr.load(locale) )
+                {
+                   printf ("OK\n");
+                   b_locale_loaded = true;
+                }
                 else
-                    printf ("OK\n");
+                   printf ("failed! (using none)\n");
             }
-            else
-            {
-                if (b_locale_default)
-                    printf ("using none\n");
-                else
-                    printf ("failed\n");
-            }
-        }
-        else
-        {
-            if ( !trnsltr.load(QString("quimup_") + locale, "/usr/share/quimup/translations/") )
+            else // first try installation path, next default path
             {
                 QDir dir(QApplication::applicationDirPath());
-                if ( !trnsltr.load(QString("quimup_") + locale, dir.absolutePath()) )
+
+                if ( trnsltr.load(QString("quimup_") + locale, dir.absolutePath()) )
                 {
-                    if (b_locale_default)
-                        printf ("using none\n");
-                    else
-                        printf ("failed\n");
+                    printf ("OK (from %s)\n", (const char*)dir.absolutePath().toUtf8());
+                    b_locale_loaded = true;
                 }
                 else
                 {
-                    if (b_locale_default)
-                        printf ("using default\n");
+                    if ( trnsltr.load(QString("quimup_") + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath)) )
+                    {
+                        printf ("OK (from default location)\n");
+                        b_locale_loaded = true;
+                    }
                     else
-                        printf ("found in %s\n", (const char*)dir.absolutePath().toUtf8());
+                         printf ("failed! (using none)\n");
                 }
             }
+
+        }
+        else // locale file in defaut system location
+        {
+            printf ("Locale : ");
+            if ( trnsltr.load(QString("quimup_") + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath)) )
+            {
+                printf ("using default (%s)\n", (const char*)locale.toUtf8());
+                b_locale_loaded = true;
+            }
             else
-                printf ("found in /usr/share/quimup/translations\n");
+                printf ("using none\n");
         }
     }
+    else
+       printf ("Locale : using none (requested)\n");
 
-    app.installTranslator(&trnsltr);
+    if (b_locale_loaded)
+        app.installTranslator(&trnsltr);
 
+    //// < end Localization
 
     qm_core *core = new qm_core();
 
@@ -174,6 +179,9 @@ int main(int argc, char **argv)
     }
 
     QObject::connect(&app, SIGNAL(messageReceived(const QString&)), core, SLOT(on_message_from_2nd_instance(const QString&)));
+    QObject::connect(&app, SIGNAL(aboutToQuit()), core, SLOT(on_system_quit()));
 
     return app.exec();
 }
+
+

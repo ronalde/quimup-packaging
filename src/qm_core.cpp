@@ -1,7 +1,7 @@
 /*
 *  qm_core.cpp
 *  QUIMUP core class
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -23,14 +23,16 @@
 /*
 	***************************************************************************
 	The only purpose of the 'core' is to provide KDE with a main program window
-	(albeit invisible) that can be closed on logout. 
+    (albeit invisible) that can be closed on shutdown (or logout).
 	
-	If the player window was the main window it would have to ignore() the 
-	close-event to allow close-to-tray behavior.
-	This would also ignore the close-event evoked by KDE on shutdown, which
-	would abort the logout procedure.
-	The 'core' will accept the close-event, and it's child (the player) will be
-	closed with it.
+    The player window ignores the close-event to allow close-to-tray behavior.
+
+    But it will also ignore the close-event evoked by KDE on shutdown, which
+    consequently aborts the logout procedure.
+
+    This 'core' however accepts the close-event, and it's child, the player
+    window, is closed with it.
+
 	The player can close itself by calling qApp->quit().
 	***************************************************************************
 */
@@ -54,6 +56,12 @@ void qm_core::on_message_from_2nd_instance(const QString & msg)
     }
     else
         player->wakeup_call(false);
+}
+
+// called from main.cpp
+void qm_core::on_system_quit()
+{
+    player->on_shudown();
 }
 
 qm_core::~qm_core()

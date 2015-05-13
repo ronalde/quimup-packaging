@@ -1,7 +1,7 @@
 /*
 *  qm_playlistview.h
 *  QUIMUP playlist listview
-*  © 2008-2013 Johan Spee
+*  © 2008-2014 Johan Spee
 *
 *  This file is part of Quimup
 *
@@ -22,6 +22,8 @@
 
 #ifndef QM_PLAYLIST_H
 #define QM_PLAYLIST_H
+#include <QtWidgets>
+#include <QDrag>
 #include <QApplication>
 #include <QHeaderView>
 #include <QTreeWidget>
@@ -96,6 +98,8 @@ private slots:
     void delete_it();
     void save_it();
     void save_selected();
+    void reset_played();
+    void reload_playlist();
     void startDrag(Qt::DropActions);
 
 private:
@@ -125,7 +129,9 @@ private:
             *a_savelist,
             *a_savesel,
             *a_delsel,
-            *a_clearlist;
+            *a_clearlist,
+           // *a_loadlist,
+            *a_playreset;
     qm_IDlist get_played_IDs();
     void contextMenuEvent(QContextMenuEvent *);
     void keyPressEvent(QKeyEvent *);
