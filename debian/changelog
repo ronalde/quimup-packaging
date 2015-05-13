@@ -1,3 +1,11 @@
+quimup (1.4.0-2) jessie utopic; urgency=low
+
+	* debian/rules: replaced architecture dependant
+	`/usr/lib/x86_64-linux-gnu/qt5/bin/qmake` by architecture
+	independant `QT_SELECT="5" qmake`
+
+ -- Ronald van Engelen <ronalde@lacocina.nl>  Wed, 13 May 2015 13:37:01 +0200
+
 quimup (1.4.0-1) jessie utopic; urgency=low
 
   * debian/README.Debian: updated
